@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style>
+		body{
+			background:black;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas" width="500" height="500" style="border:1px solid white;"></canvas>
+	<script>
+		var canvas;
+		var ctx;
+		var pause = false;
+		var lastKey = null;
+		var KEY_UP=119,
+			KEY_DOWN=115,
+			KEY_RIGHT=100,
+			KEY_LEFT=97,
+			ENTER=13;
+		var iFood = new Image();
+		var iBody = new Image();
+		var aEat = new Audio();
+		var aDie = new Audio();
+		var dir;
+		var player = null;
+		var gameover = null;
+		var food = null;
+		var wall = [];
+		var score = 0;
+		var Rectangle = function(x,y,width,height){
+			this.x = (x == null) ? 10 : x; 
+			this.y = (y == null) ? 10 : y; 
+			this.width = (width == null) ? 10 : width; 
+			this.height = (height == null) ? this.width : height; 
+
+			this.intersects = function(rect){
+				if(rect == null){
+					console.warn("Rectangle no encontrado")
+				}else{
+					return (
+						this.x < rect.x + rect.width && 
+						this.x + this.width > rect.x && 
+						this.y < rect.y + rect.height && 
+						this.y + this.height > rect.y
+					)
+				}
+			}
+
+			this.draw = function(ctx){
+				if(ctx == null){
+					console.warn("CTX no encontrado")
+				}else{
+					ctx.fillRect(this.x,this.y,this.width,this.height);
+				}
+			}
+		}
+
+		function main(){
+			canvas = document.getElementById("canvas");
+			ctx = canvas.getContext("2d");
+
+			player = new Rectangle();
+			food = new Rectangle(80,80);
+			iBody.src = 'body.png';
+			iFood.src = 'fruit.png';
+			aEat.src = 'chomp.oga'
+			aDie.src = 'dies.oga'
+			
+			for(i=0;i<40;i++){
+				wall.push(new Rectangle(Math.floor(Math.random() * (canvas.width / 10 - 1) * 10),Math.floor(Math.random() * (canvas.height / 10 - 1) * 10)));
+			}
+
+			run();
+		}
+
+		function reset(){
+			score=0;
+			player.x = 40;
+			player.y = 40;
+			food.x = Math.floor(Math.random() * (canvas.width / 10 - 1) * 10);
+			food.y = Math.floor(Math.random() * (canvas.height / 10 - 1) * 10);
+			gameover = false;
+		}
+
+		function aleatorio(max){
+			Math.floor(Math.random() * max);
+		}
+
+		function draw(){
+			canvas.width=canvas.width;
+			ctx.fillStyle = "#fff";
+			ctx.fillText("Last Key: " + lastKey,10,15);
+			ctx.fillText("X: " + player.x + " " +"Y: " + player.y,10,30);
+			ctx.fillText("Score: " + score,10,45);
+			ctx.fillStyle = "#BDBDBD";
+
+			for(i=0;i<wall.length;i++){
+				wall[i].draw(ctx);
+			}
+
+			if (pause) {
+				if (gameover) {
+					ctx.fillText("GAME OVER",10,60);
+				}else{
+					ctx.fillText("PAUSE",10,60);
+				}
+			}
+
+			// ctx.fillStyle = "red";
+			// player.draw(ctx);
+			ctx.drawImage(iBody, player.x, player.y);
+			ctx.drawImage(iFood, food.x, food.y);
+
+		}
+
+		function act(){
+			if (!pause) {
+				if (gameover) {
+					reset();
+				}
+
+				//Change direction
+				if(lastKey == KEY_UP) {
+					dir = 0;
+				}if (lastKey == KEY_DOWN) {
+					dir = 1;
+				}if (lastKey == KEY_RIGHT) {
+					dir = 2;
+				}if (lastKey == KEY_LEFT) {
+					dir = 3;
+				}
+
+				//Move object
+				if(dir == 0) {
+					player.y -= 2;
+				}if (dir == 1) {
+					player.y += 2;
+				}if (dir == 2) {
+					player.x += 2;
+				}if (dir == 3) {
+					player.x -= 2;
+				}
+
+				//Validate screen
+
+				if(player.x > canvas.width){
+					player.x = 0;
+				}if(player.x+10 < 0){
+					player.x = canvas.width;
+				}if(player.y+10 < 0){
+					player.y = canvas.height;
+				}if(player.y > canvas.height){
+					player.y = 0;
+				}
+
+				if(player.intersects(food)){
+					score++;
+					food.x = Math.floor(Math.random() * (canvas.width / 10 - 1) * 10);
+					food.y = Math.floor(Math.random() * (canvas.height / 10 - 1) * 10);
+					aEat.play();
+				}
+
+				for(i=0;i<wall.length;i++){
+					if (food.intersects(wall[i])){
+						food.x = Math.floor(Math.random() * (canvas.width / 10 - 1) * 10);
+						food.y = Math.floor(Math.random() * (canvas.height / 10 - 1) * 10);
+					}if(player.intersects(wall[i])){
+						pause=true;
+						gameover=true;
+						aDie.play();
+					}
+				}
+			}if (lastKey == ENTER) {
+				pause=!pause;
+				lastKey=null;
+			}
+		}
+
+		function run(){
+			window.requestAnimationFrame(run);
+			draw();
+			act();
+		}
+
+		window.addEventListener("load",main);
+		window.addEventListener("keypress", function(e){
+			lastKey = e.which;
+		});
+	</script>
+</body>
+</html>
+
+
+
+
+
+
